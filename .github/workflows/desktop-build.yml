@@ -1,0 +1,150 @@
+name: Desktop Build
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/desktop/**"
+      - ".github/workflows/desktop-build.yml"
+      - ".github/workflows/desktop-release.yml"
+  pull_request:
+    paths:
+      - "apps/desktop/**"
+      - ".github/workflows/desktop-build.yml"
+      - ".github/workflows/desktop-release.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS arm64
+            os: macos-14
+            variant: standard
+            artifact-name: codex-pet-macos-arm64
+            build-args: --target aarch64-apple-darwin
+            portable-command: npm run package:portable:mac
+            artifact-paths: |
+              apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+              apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
+              apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/portable/*.zip
+          - name: macOS arm64 Gyeonggi
+            os: macos-14
+            variant: gyeonggi
+            artifact-name: codex-pet-gyeonggi-macos-arm64
+            build-args: --target aarch64-apple-darwin
+            portable-command: npm run package:portable:mac
+            artifact-paths: |
+              apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+              apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app
+              apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/portable/*.zip
+          - name: Windows x64
+            os: windows-2025-vs2026
+            variant: standard
+            artifact-name: codex-pet-windows-x64
+            build-args: ""
+            portable-command: npm run package:portable:win
+            artifact-paths: |
+              apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+              apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+              apps/desktop/src-tauri/target/release/bundle/portable/*.zip
+          - name: Windows x64 Gyeonggi
+            os: windows-2025-vs2026
+            variant: gyeonggi
+            artifact-name: codex-pet-gyeonggi-windows-x64
+            build-args: ""
+            portable-command: npm run package:portable:win
+            artifact-paths: |
+              apps/desktop/src-tauri/target/release/bundle/msi/*.msi
+              apps/desktop/src-tauri/target/release/bundle/nsis/*.exe
+              apps/desktop/src-tauri/target/release/bundle/portable/*.zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add macOS arm64 Rust target
+        if: matrix.os == 'macos-14'
+        run: rustup target add aarch64-apple-darwin
+
+      - name: Cache Rust
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri -> target
+
+      - name: Install frontend dependencies
+        working-directory: apps/desktop
+        run: npm ci
+
+      - name: Typecheck UI
+        working-directory: apps/desktop
+        run: npm run typecheck
+
+      - name: Check release metadata
+        working-directory: apps/desktop
+        run: npm run release:check
+
+      - name: Check signing readiness
+        working-directory: apps/desktop
+        run: npm run signing:check
+
+      - name: Check commercial readiness
+        working-directory: apps/desktop
+        run: npm run commercial:check
+
+      - name: Build UI
+        working-directory: apps/desktop
+        env:
+          VITE_CODEX_PET_VARIANT: ${{ matrix.variant }}
+        run: npm run build:ui
+
+      - name: Smoke preview UI
+        working-directory: apps/desktop
+        run: npm run smoke:preview
+
+      - name: Check Rust
+        working-directory: apps/desktop/src-tauri
+        run: cargo check
+
+      - name: Configure build variant
+        working-directory: apps/desktop
+        env:
+          CODEX_PET_VARIANT: ${{ matrix.variant }}
+        run: node scripts/configure-variant.mjs
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          CODEX_PET_VARIANT: ${{ matrix.variant }}
+          VITE_CODEX_PET_VARIANT: ${{ matrix.variant }}
+        with:
+          projectPath: apps/desktop
+          args: ${{ matrix.build-args }}
+
+      - name: Package portable app
+        working-directory: apps/desktop
+        env:
+          CODEX_PET_VARIANT: ${{ matrix.variant }}
+        run: ${{ matrix.portable-command }}
+
+      - name: Upload desktop artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: ${{ matrix.artifact-paths }}
+          if-no-files-found: error

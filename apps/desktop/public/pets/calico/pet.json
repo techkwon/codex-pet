@@ -1,0 +1,6 @@
+{
+  "id": "calico",
+  "displayName": "Calico",
+  "description": "A small calico cat Codex pet extracted from the attached cat and dog reference image.",
+  "spritesheetPath": "spritesheet.webp"
+}

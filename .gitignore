@@ -1,0 +1,8 @@
+.DS_Store
+*.tmp
+*.log
+node_modules/
+dist/
+target/
+apps/desktop/src-tauri/gen/
+.hatch-runs/

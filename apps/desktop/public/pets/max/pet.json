@@ -1,0 +1,6 @@
+{
+  "id": "max",
+  "displayName": "Max",
+  "description": "A small golden puppy Codex pet extracted from the attached cat and dog reference image.",
+  "spritesheetPath": "spritesheet.webp"
+}

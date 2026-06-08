@@ -1,0 +1,6 @@
+{
+  "id": "airo",
+  "displayName": "Airo",
+  "description": "A compact Codex digital pet based on the blue-hat magic cat character in the provided reference image.",
+  "spritesheetPath": "spritesheet.webp"
+}

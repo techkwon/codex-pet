@@ -1,0 +1,40 @@
+{
+  "name": "highlearning-pet-reminder",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "dev:ui": "vite --host 127.0.0.1 --port 1420",
+    "build": "tauri build",
+    "build:ui": "tsc && vite build",
+    "smoke:preview": "node scripts/smoke-preview.mjs",
+    "measure:mac": "bash scripts/measure-macos-resources.sh",
+    "package:portable:mac": "bash scripts/package-portable-macos.sh",
+    "package:portable:win": "powershell -ExecutionPolicy Bypass -File scripts/package-portable-windows.ps1",
+    "preview": "vite preview --host 127.0.0.1 --port 1420",
+    "release:check": "node scripts/prepare-release.mjs --check",
+    "release:prepare": "node scripts/prepare-release.mjs",
+    "signing:check": "node scripts/check-signing-readiness.mjs",
+    "signing:check:strict": "node scripts/check-signing-readiness.mjs --strict",
+    "commercial:check": "node scripts/check-commercial-readiness.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "2.11.0",
+    "@tauri-apps/plugin-autostart": "2.5.1",
+    "@tauri-apps/plugin-dialog": "2.7.1",
+    "@tauri-apps/plugin-notification": "2.3.3",
+    "@tauri-apps/plugin-opener": "^2.5.4",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.6"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.11.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3"
+  }
+}

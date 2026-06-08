@@ -1,0 +1,6 @@
+{
+  "id": "haro",
+  "displayName": "Haro",
+  "description": "A compact Codex digital pet based on the small green-eared companion character in the provided reference image.",
+  "spritesheetPath": "spritesheet.webp"
+}
