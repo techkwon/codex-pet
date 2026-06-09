@@ -1,13 +1,13 @@
-# Codex Pet 0.1.2
+# Codex Pet 0.1.3
 
 Release date: 2026-06-09
 
 ## Changes
 
-- Fix clipped pet speech bubbles on macOS by widening the default standalone pet window.
-- Center the pet speech bubble and resource pill so text stays inside the transparent window bounds.
-- Allow CPU/MEM/BAT resource text to wrap instead of showing a broken ellipsis.
-- Keep the existing compact pet size while giving status text enough room to render cleanly.
+- Ad-hoc sign macOS portable `.app` bundles before creating ZIP packages.
+- Verify the macOS app bundle signature during portable packaging.
+- Keep unsigned/test distribution available while reducing macOS "damaged app" Gatekeeper failures.
+- Add a commercial readiness gate so future macOS portable packages keep the signing step.
 
 ## Verification
 

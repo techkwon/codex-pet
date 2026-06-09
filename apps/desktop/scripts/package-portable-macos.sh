@@ -25,6 +25,15 @@ if [[ ! -d "$APP_PATH" ]]; then
   exit 1
 fi
 
+if command -v codesign >/dev/null 2>&1; then
+  SIGN_IDENTITY="${APPLE_SIGNING_IDENTITY:--}"
+  echo "Signing portable app bundle with identity: $SIGN_IDENTITY"
+  codesign --force --deep --sign "$SIGN_IDENTITY" "$APP_PATH"
+  codesign --verify --deep --strict --verbose=2 "$APP_PATH"
+else
+  echo "codesign is not available; portable app will remain unsigned." >&2
+fi
+
 mkdir -p "$OUT_DIR"
 rm -f "$ZIP_PATH"
 

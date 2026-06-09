@@ -17,6 +17,7 @@ const paths = {
   desktopBuildWorkflow: resolve(repoDir, ".github/workflows/desktop-build.yml"),
   desktopReleaseWorkflow: resolve(repoDir, ".github/workflows/desktop-release.yml"),
   releaseChecklist: resolve(appDir, "RELEASE_CHECKLIST.md"),
+  packagePortableMac: resolve(appDir, "scripts/package-portable-macos.sh"),
 };
 
 const failures = [];
@@ -52,6 +53,7 @@ function requirePath(path, label) {
 
 function checkPackageScripts() {
   const packageJson = readJson(paths.packageJson);
+  const macPortableScript = readText(paths.packagePortableMac);
   const requiredScripts = [
     "typecheck",
     "build:ui",
@@ -68,6 +70,10 @@ function checkPackageScripts() {
   for (const script of requiredScripts) {
     assert(Boolean(packageJson.scripts?.[script]), `npm script '${script}' is defined`);
   }
+
+  assert(macPortableScript.includes("codesign --force --deep --sign"), "macOS portable package ad-hoc signs app bundles");
+  assert(macPortableScript.includes("codesign --verify --deep --strict"), "macOS portable package verifies app bundle signatures");
+  assert(macPortableScript.includes("ditto -c -k --sequesterRsrc --keepParent"), "macOS portable package preserves app bundle resources");
 }
 
 function checkTauriSecurity() {
