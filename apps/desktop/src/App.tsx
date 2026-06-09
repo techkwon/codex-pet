@@ -296,25 +296,49 @@ function isUrlTarget(target: string) {
 
 function resourceLevel(resource: ResourceSnapshot | null) {
   if (!resource) return "대기";
-  const pressure = Math.max(resource.cpuPercent, resource.memoryPercent);
-  if (pressure >= 80) return "높음";
+  const pressure = resourcePressure(resource);
+  if (pressure >= 80 || isBatteryLow(resource)) return "높음";
   if (pressure >= 50) return "보통";
   return "낮음";
 }
 
+function resourcePressure(resource: ResourceSnapshot | null) {
+  if (!resource) return 0;
+  return Math.max(resource.cpuPercent, resource.memoryPercent);
+}
+
+function isBatteryLow(resource: ResourceSnapshot | null) {
+  if (resource?.batteryPercent == null || resource.batteryPercent > 20) return false;
+  return !/charging|full/i.test(resource.batteryState ?? "");
+}
+
+function resourceStatusText(resource: ResourceSnapshot | null) {
+  if (!resource) return null;
+  if (isBatteryLow(resource)) return "에너지가 부족해요. 충전이 필요해요.";
+  const pressure = resourcePressure(resource);
+  if (pressure >= 90) return "후다닥! 전력으로 움직이는 중이에요.";
+  if (pressure >= 80) return "바빠요 바빠! 속도를 더 올릴게요.";
+  if (pressure >= 65) return "분주하게 움직이는 중이에요.";
+  if (pressure >= 50) return "가볍게 속도를 올릴게요.";
+  return null;
+}
+
 function resourcePetState(resource: ResourceSnapshot | null): "idle" | "focus" | "break" | "wait" {
   if (!resource) return "idle";
-  const pressure = Math.max(resource.cpuPercent, resource.memoryPercent);
-  if (pressure >= 80) return "wait";
+  const pressure = resourcePressure(resource);
+  if (pressure >= 80 || isBatteryLow(resource)) return "wait";
   if (pressure >= 50) return "focus";
   return "idle";
 }
 
 function animationSpeed(resource: ResourceSnapshot | null) {
-  const level = resourceLevel(resource);
-  if (level === "높음") return 360;
-  if (level === "보통") return 560;
-  return 920;
+  const pressure = resourcePressure(resource);
+  if (pressure >= 90) return 180;
+  if (pressure >= 80) return 240;
+  if (pressure >= 65) return 360;
+  if (pressure >= 50) return 520;
+  if (pressure >= 30) return 720;
+  return 980;
 }
 
 function petStatusText(
@@ -324,11 +348,10 @@ function petStatusText(
 ) {
   if (session) return `${session.subject} ${session.phase === "focus" ? "집중 중" : "휴식 중"} · ${formatTime(session.remainingSeconds)}`;
   if (mood === "success") return "좋아요. 방금 일을 처리했어요.";
+  const resourceText = resourceStatusText(resource);
+  if (resourceText) return resourceText;
   if (mood === "wait") return "확인할 알림이 있어요.";
-  const level = resourceLevel(resource);
-  if (level === "높음") return "사용량이 높아요. 잠깐 정리해볼까요?";
-  if (level === "보통") return "조금 바빠졌어요.";
-  return "대기 중이에요.";
+  return "잠깐 숨 고르는 중이에요.";
 }
 
 function PetSprite({
@@ -1591,10 +1614,13 @@ function App() {
             </div>
             <div className="import-box">
               <strong>웹/GitHub/ZIP</strong>
+              <small className="import-hint">
+                codex-pets.net 펫 페이지나 Download package 링크도 붙여넣어 바로 추가할 수 있습니다.
+              </small>
               <input
                 value={importUrl}
                 onChange={(event) => setImportUrl(event.target.value)}
-                placeholder="https://github.com/.../tree/main/pet"
+                placeholder="https://codex-pets.net/#/pets/... 또는 GitHub/ZIP URL"
               />
               <div className="button-row">
                 <button onClick={() => validateUrl()} disabled={!importUrl}>검증</button>

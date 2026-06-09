@@ -616,7 +616,7 @@ small {
   display: grid;
   align-content: end;
   justify-items: end;
-  gap: 4px;
+  gap: 6px;
   padding: 10px 12px 12px;
   overflow: hidden;
   background: transparent;
@@ -629,25 +629,25 @@ small {
 }
 
 .pet-bubble {
+  min-width: 190px;
   max-width: calc(100vw - 18px);
   border: 1px solid rgba(168, 203, 189, 0.9);
-  border-radius: 999px;
-  background: rgba(255, 253, 250, 0.88);
+  border-radius: 14px;
+  background: rgba(255, 253, 250, 0.94);
   color: #17201d;
-  padding: 5px 9px;
-  font-size: 12px;
+  padding: 7px 12px;
+  font-size: 14px;
   font-weight: 800;
-  line-height: 1.2;
-  overflow: hidden;
+  line-height: 1.28;
+  overflow-wrap: anywhere;
   text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .pet-info-stack {
   display: grid;
   justify-items: end;
-  gap: 3px;
+  gap: 5px;
   max-width: calc(100% - 16px);
 }
 
@@ -655,11 +655,15 @@ small {
 .timer-pill {
   max-width: 100%;
   color: #17201d;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pet-window .resource-pill {
+  padding: 6px 10px;
 }
 
 .timer-pill {

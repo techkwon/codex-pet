@@ -246,6 +246,25 @@ fn default_pet_size() -> u32 {
     140
 }
 
+fn pet_window_width(pet_size: u32, menu_open: bool) -> f64 {
+    let pet_size = pet_size.clamp(120, 320) as f64;
+    if menu_open {
+        (pet_size + 300.0).max(440.0)
+    } else {
+        (pet_size + 120.0).max(286.0)
+    }
+}
+
+fn pet_window_height(pet_size: u32, menu_open: bool) -> f64 {
+    let pet_size = pet_size.clamp(120, 320) as f64;
+    let sprite_height = pet_size * 1.083;
+    if menu_open {
+        (sprite_height + 340.0).round().max(540.0)
+    } else {
+        (sprite_height + 112.0).round().max(250.0)
+    }
+}
+
 fn default_settings() -> AppSettings {
     AppSettings {
         selected_pet_id: default_selected_pet_id(),
@@ -740,6 +759,72 @@ fn github_blob_to_raw(url: &Url) -> Option<String> {
     ))
 }
 
+fn codex_pets_download_url(url: &Url) -> Option<String> {
+    if url.host_str()? != "codex-pets.net" {
+        return None;
+    }
+
+    let segments: Vec<_> = url.path_segments()?.collect();
+    if segments.len() >= 4
+        && segments[0] == "api"
+        && segments[1] == "pets"
+        && segments[3] == "download"
+    {
+        return Some(url.to_string());
+    }
+
+    if segments.len() >= 2 && segments[0] == "pets" {
+        return Some(format!(
+            "https://codex-pets.net/api/pets/{}/download",
+            segments[1]
+        ));
+    }
+
+    let fragment = url.fragment()?.trim_start_matches('/');
+    let route = fragment.split_once('?').map(|value| value.0).unwrap_or(fragment);
+    let parts: Vec<_> = route.split('/').collect();
+    if parts.len() >= 2 && parts[0] == "pets" && !parts[1].is_empty() {
+        return Some(format!(
+            "https://codex-pets.net/api/pets/{}/download",
+            parts[1]
+        ));
+    }
+
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn converts_codex_pets_hash_detail_url_to_download_url() {
+        let url = Url::parse("https://codex-pets.net/#/pets/strawberry-cat").unwrap();
+        assert_eq!(
+            codex_pets_download_url(&url),
+            Some("https://codex-pets.net/api/pets/strawberry-cat/download".to_string())
+        );
+    }
+
+    #[test]
+    fn converts_codex_pets_path_detail_url_to_download_url() {
+        let url = Url::parse("https://codex-pets.net/pets/strawberry-cat").unwrap();
+        assert_eq!(
+            codex_pets_download_url(&url),
+            Some("https://codex-pets.net/api/pets/strawberry-cat/download".to_string())
+        );
+    }
+
+    #[test]
+    fn keeps_codex_pets_download_url() {
+        let url = Url::parse("https://codex-pets.net/api/pets/strawberry-cat/download?v=123").unwrap();
+        assert_eq!(
+            codex_pets_download_url(&url),
+            Some("https://codex-pets.net/api/pets/strawberry-cat/download?v=123".to_string())
+        );
+    }
+}
+
 fn download_bytes(url: &str) -> Result<Vec<u8>> {
     let response = reqwest::blocking::get(url)?.error_for_status()?;
     Ok(response.bytes()?.to_vec())
@@ -795,8 +880,9 @@ fn latest_desktop_release() -> Result<Option<GitHubRelease>> {
 fn write_downloaded_pet(temp: &Path, url: &str) -> Result<PathBuf> {
     fs::create_dir_all(temp)?;
     let parsed = Url::parse(url).context("URL 형식이 올바르지 않습니다")?;
-    if parsed.path().ends_with(".zip") {
-        let bytes = download_bytes(url)?;
+    if parsed.path().ends_with(".zip") || codex_pets_download_url(&parsed).is_some() {
+        let download_url = codex_pets_download_url(&parsed).unwrap_or_else(|| url.to_string());
+        let bytes = download_bytes(&download_url)?;
         let mut archive = ZipArchive::new(Cursor::new(bytes))?;
         archive.extract(temp)?;
         let pet_json = find_file(temp, "pet.json")
@@ -1205,12 +1291,8 @@ fn set_pet_window_size(
     let pet_size = pet_size.clamp(120, 320);
     if let Some(window) = app.get_webview_window("pet") {
         let menu_open = menu_open.unwrap_or(false);
-        let width = (pet_size + if menu_open { 300 } else { 38 }) as f64;
-        let height = if menu_open {
-            (((pet_size as f64 * 1.083) + 300.0).round()).max(500.0)
-        } else {
-            ((pet_size as f64 * 1.083) + 70.0).round()
-        };
+        let width = pet_window_width(pet_size, menu_open);
+        let height = pet_window_height(pet_size, menu_open);
         let old_position = window.outer_position().ok();
         let old_size = window.outer_size().ok();
         let scale_factor = window.scale_factor().unwrap_or(1.0);
@@ -1334,10 +1416,10 @@ fn quit_app(app: AppHandle) {
 fn place_pet_window_bottom_right(app: AppHandle, pet_size: u32) -> Result<(), String> {
     let pet_size = pet_size.clamp(120, 320);
     if let Some(window) = app.get_webview_window("pet") {
-        let width = pet_size + 38;
-        let height = ((pet_size as f64 * 1.083) + 70.0).round() as u32;
+        let width = pet_window_width(pet_size, false);
+        let height = pet_window_height(pet_size, false);
         window
-            .set_size(Size::Logical(LogicalSize::new(width as f64, height as f64)))
+            .set_size(Size::Logical(LogicalSize::new(width, height)))
             .map_err(|error| error.to_string())?;
         if let Some(monitor) = window
             .current_monitor()
@@ -1349,9 +1431,9 @@ fn place_pet_window_bottom_right(app: AppHandle, pet_size: u32) -> Result<(), St
             let logical_width = monitor_size.width as f64 / scale_factor;
             let logical_height = monitor_size.height as f64 / scale_factor;
             let logical_x =
-                monitor_position.x as f64 / scale_factor + logical_width - width as f64 - 18.0;
+                monitor_position.x as f64 / scale_factor + logical_width - width - 18.0;
             let logical_y =
-                monitor_position.y as f64 / scale_factor + logical_height - height as f64 - 92.0;
+                monitor_position.y as f64 / scale_factor + logical_height - height - 92.0;
             window
                 .set_position(Position::Logical(LogicalPosition::new(
                     logical_x.max(0.0),
@@ -1443,7 +1525,13 @@ fn setup_tray(app: &mut tauri::App) -> Result<()> {
     let hide_pet = MenuItem::with_id(app, "hide_pet", "펫 숨기기", true, None::<&str>)?;
     let quit = MenuItem::with_id(app, "quit", "종료", true, None::<&str>)?;
     let menu = Menu::with_items(app, &[&status, &show, &routines, &focus, &pet, &hide_pet, &quit])?;
+    let icon = app
+        .default_window_icon()
+        .cloned()
+        .ok_or_else(|| anyhow!("default window icon is required for the tray icon"))?;
     TrayIconBuilder::new()
+        .icon(icon)
+        .tooltip("Codex Pet")
         .menu(&menu)
         .show_menu_on_left_click(true)
         .on_menu_event(|app, event| match event.id.as_ref() {
