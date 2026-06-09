@@ -251,7 +251,7 @@ fn pet_window_width(pet_size: u32, menu_open: bool) -> f64 {
     if menu_open {
         (pet_size + 300.0).max(440.0)
     } else {
-        (pet_size + 120.0).max(286.0)
+        (pet_size + 190.0).max(340.0)
     }
 }
 
@@ -261,7 +261,7 @@ fn pet_window_height(pet_size: u32, menu_open: bool) -> f64 {
     if menu_open {
         (sprite_height + 340.0).round().max(540.0)
     } else {
-        (sprite_height + 112.0).round().max(250.0)
+        (sprite_height + 132.0).round().max(282.0)
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "highlearning-pet-reminder"
-version = "0.1.1"
+version = "0.1.2"
 description = "Lightweight standalone Codex-compatible desktop pets with study reminders."
 authors = ["techkwon"]
 license = ""

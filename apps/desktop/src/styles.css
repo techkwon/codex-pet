@@ -615,7 +615,7 @@ small {
   height: 100vh;
   display: grid;
   align-content: end;
-  justify-items: end;
+  justify-items: center;
   gap: 6px;
   padding: 10px 12px 12px;
   overflow: hidden;
@@ -630,7 +630,7 @@ small {
 
 .pet-bubble {
   min-width: 190px;
-  max-width: calc(100vw - 18px);
+  max-width: calc(100% - 18px);
   border: 1px solid rgba(168, 203, 189, 0.9);
   border-radius: 14px;
   background: rgba(255, 253, 250, 0.94);
@@ -646,8 +646,9 @@ small {
 
 .pet-info-stack {
   display: grid;
-  justify-items: end;
+  justify-items: center;
   gap: 5px;
+  width: 100%;
   max-width: calc(100% - 16px);
 }
 
@@ -658,8 +659,10 @@ small {
   font-size: 12px;
   font-weight: 800;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  text-align: center;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .pet-window .resource-pill {
